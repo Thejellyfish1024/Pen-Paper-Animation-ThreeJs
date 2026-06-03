@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pen & Paper Animation - Three.js</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        user-select: none;
+        background-color: #000000; /* Page background set to black */
+      }
+      #ui-panel {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+        background: rgba(30, 30, 30, 0.85); /* Darker panel theme */
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        max-width: 280px;
+        color: #ffffff;
+        border: 1px solid #444;
+      }
+      h3 {
+        margin: 0 0 10px 0;
+        color: #fff;
+        font-size: 18px;
+      }
+      .btn-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+      button {
+        flex: 1;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 6px;
+        background-color: #007bff;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      #btn-clear {
+        background-color: #dc3545;
+      }
+      #btn-clear:hover {
+        background-color: #bd2130;
+      }
+      .instructions {
+        font-size: 12px;
+        line-height: 1.6;
+        color: #ccc;
+        border-top: 1px solid #444;
+        padding-top: 10px;
+      }
+      .key {
+        background: #444;
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="ui-panel">
+      <h3>Control Panel</h3>
+      <div class="btn-group">
+        <button id="btn-undo">Undo</button>
+        <button id="btn-clear">Clear</button>
+      </div>
+      <div class="instructions">
+        <p>1. <b>Left Click + Drag:</b> Write / Draw on paper</p>
+        <p>2. <b>Right Click:</b> Switch Pen (Color & Texture)</p>
+        <p>
+          3. <span class="key">←</span> / <span class="key">→</span>
+          <b>Left/Right keys:</b> Orbit horizontally
+        </p>
+        <p>
+          4. <span class="key">↑</span> / <span class="key">↓</span>
+          <b>Up/Down keys:</b> Orbit vertically
+        </p>
+      </div>
+    </div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
