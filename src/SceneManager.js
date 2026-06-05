@@ -58,7 +58,7 @@ export class SceneManager {
     const paperHeight = 11;
 
     // 3D Notebook block base
-    const padThickness = 0.4;
+    const padThickness = 0.2;
     const padGeo = new THREE.BoxGeometry(
       paperWidth + 0.1,
       padThickness,
