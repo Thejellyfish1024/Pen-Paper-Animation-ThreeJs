@@ -96,7 +96,6 @@ export class CanvasManager {
       );
 
       for (let i = 1; i < stroke.points.length; i++) {
-        // FIXED: Correctly multiplying by width and height consistently
         this.ctx.lineTo(
           stroke.points[i].x * this.canvas.width,
           (1 - stroke.points[i].y) * this.canvas.height,

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
-// Generates a high-quality paper texture with a subtle fibrous grain
-export function createProceduralPaperTexture() {
+// paper texture
+export function createPaperTexture() {
   const canvas = document.createElement("canvas");
   canvas.width = 1024;
   canvas.height = 1024;
@@ -11,7 +11,7 @@ export function createProceduralPaperTexture() {
   ctx.fillStyle = "#fcfbfa";
   ctx.fillRect(0, 0, 1024, 1024);
 
-  // Draw subtle horizontal legal lines for aesthetic points
+  // Draw  horizontal lines
   ctx.strokeStyle = "rgba(0, 150, 255, 0.15)";
   ctx.lineWidth = 2;
   for (let y = 100; y < 1024; y += 40) {
@@ -21,7 +21,6 @@ export function createProceduralPaperTexture() {
     ctx.stroke();
   }
 
-  // Add random procedural noise for the surface paper texture
   for (let i = 0; i < 20000; i++) {
     const x = Math.random() * 1024;
     const y = Math.random() * 1024;
@@ -36,18 +35,16 @@ export function createProceduralPaperTexture() {
   return texture;
 }
 
-// Generates a pen body texture with a glossy/metallic lighting reflection look
-export function createProceduralPenTexture(baseHexColor) {
+// pen texture
+export function createPenTexture(baseHexColor) {
   const canvas = document.createElement("canvas");
   canvas.width = 256;
   canvas.height = 512;
   const ctx = canvas.getContext("2d");
 
-  // Solid plastic casing base
   ctx.fillStyle = baseHexColor;
   ctx.fillRect(0, 0, 256, 512);
 
-  // Simulated material gradient reflections
   const gradient = ctx.createLinearGradient(0, 0, 256, 0);
   gradient.addColorStop(0, "rgba(255, 255, 255, 0.4)");
   gradient.addColorStop(0.3, "rgba(255, 255, 255, 0.0)");

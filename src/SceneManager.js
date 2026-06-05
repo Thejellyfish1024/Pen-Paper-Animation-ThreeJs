@@ -1,10 +1,7 @@
 import * as THREE from "three";
 import { createCustomMaterial } from "./CustomShaderMaterial.js";
 import { CanvasManager } from "./CanvasManager.js";
-import {
-  createProceduralPaperTexture,
-  createProceduralPenTexture,
-} from "./TextureGenerator.js";
+import { createPaperTexture, createPenTexture } from "./TextureGenerator.js";
 
 export class SceneManager {
   constructor(container) {
@@ -12,28 +9,35 @@ export class SceneManager {
     this.isWriting = false;
 
     // Camera angles tracking (Spherical Coordinates)
-    this.theta = 0; // Horizontal angle (Left/Right)
-    this.phi = Math.PI / 3; // Vertical angle (Up/Down) - start at an angled view
-    this.radius = 16; // Camera distance
+    this.theta = 0;
+    this.phi = Math.PI / 3;
+    this.radius = 16;
 
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
 
-    this.paperBG = createProceduralPaperTexture();
+    this.paperBG = createPaperTexture();
     this.penTextures = {
-      blue: createProceduralPenTexture("#0033cc"),
-      red: createProceduralPenTexture("#cc1111"),
+      blue: createPenTexture("#0033cc"),
+      red: createPenTexture("#cc1111"),
     };
+
+    // Animation flag
+    this.isIntroAnimating = true;
 
     this.init();
     this.createObjects();
     this.setupEventListeners();
+
+    // Start loop
     this.animate();
+
+    // Trigger the automated circle drawing animation
+    this.playIntroAnimation();
   }
 
   init() {
     this.scene = new THREE.Scene();
-    // 1. Set the Three.js scene background to pitch black
     this.scene.background = new THREE.Color(0x000000);
 
     this.camera = new THREE.PerspectiveCamera(
@@ -50,19 +54,35 @@ export class SceneManager {
   }
 
   createObjects() {
-    // 1. Interactive Paper Surface Mesh
+    const paperWidth = 9;
+    const paperHeight = 11;
+
+    // 3D Notebook block base
+    const padThickness = 0.4;
+    const padGeo = new THREE.BoxGeometry(
+      paperWidth + 0.1,
+      padThickness,
+      paperHeight + 0.1,
+    );
+    const padBackingTex = createPenTexture("#d2b48c");
+    const padMat = createCustomMaterial(padBackingTex);
+    const notebookPad = new THREE.Mesh(padGeo, padMat);
+    notebookPad.position.y = -padThickness / 2;
+    this.scene.add(notebookPad);
+
+    // Interactive Drawing Paper Surface
     this.canvasManager = new CanvasManager(this.paperBG);
-    const paperGeo = new THREE.PlaneGeometry(9, 11);
+    const paperGeo = new THREE.PlaneGeometry(paperWidth, paperHeight);
     const paperMat = createCustomMaterial(this.canvasManager.texture);
 
     this.paper = new THREE.Mesh(paperGeo, paperMat);
     this.paper.rotation.x = -Math.PI / 2;
+    this.paper.position.y = 0.001;
     this.scene.add(this.paper);
 
-    // 2. 3D Structural Pen Mesh Composition
+    //  Pen Mesh with cylinder
     this.pen = new THREE.Group();
 
-    // Main Body Cylinder
     const bodyLength = 3.8;
     const bodyRadius = 0.14;
     const bodyGeo = new THREE.CylinderGeometry(
@@ -74,28 +94,62 @@ export class SceneManager {
     const bodyMat = createCustomMaterial(this.penTextures["blue"]);
     this.penBody = new THREE.Mesh(bodyGeo, bodyMat);
 
-    // Position body so its bottom rests exactly above the sharpened tip
     const tipHeight = 0.5;
     this.penBody.position.y = tipHeight + bodyLength / 2;
     this.pen.add(this.penBody);
 
-    // Sharpened Conical Point Tip (Pointing Downwards like a triangle)
-    // ConeGeometry(radius, height, radialSegments)
+    //  Cone Geo
     const tipGeo = new THREE.ConeGeometry(bodyRadius, tipHeight, 32);
-
-    // By default, Three.js cones look like ▲ (apex at top).
-    // We rotate it 180 degrees (Math.PI) around the Z axis so it points down: ▼
     tipGeo.rotateZ(Math.PI);
 
     const tipMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
     const tipMesh = new THREE.Mesh(tipGeo, tipMat);
-
-    // Position the tip so its sharp apex sits exactly at y = 0 (the pivot point)
     tipMesh.position.y = tipHeight / 2;
     this.pen.add(tipMesh);
 
-    // Since the sharp tip apex is now at local y = 0, we don't need to offset children manually anymore.
     this.scene.add(this.pen);
+  }
+
+  //  circle animation
+  playIntroAnimation() {
+    let angle = 0;
+    const speed = 0.03;
+    const radiusX = 0.25;
+    const radiusY = 0.2;
+    const centerX = 0.5;
+    const centerY = 0.5;
+
+    const startX = centerX + Math.cos(angle) * radiusX;
+    const startY = centerY + Math.sin(angle) * radiusY;
+    this.canvasManager.startStroke(startX, startY);
+
+    const drawStep = () => {
+      if (angle <= Math.PI * 2) {
+        angle += speed;
+
+        // Calculate next circular coordinates path point
+        const currentX = centerX + Math.cos(angle) * radiusX;
+        const currentY = centerY + Math.sin(angle) * radiusY;
+
+        // Move 3D pen visual mesh to follow the drawing path coordinates
+        // Map 2D UV coordinate properties back into 3D space locations on paper mesh
+        this.pen.position.x = (currentX - 0.5) * 10;
+        this.pen.position.z = -(currentY - 0.5) * 13;
+        this.pen.rotation.z = 0.35;
+
+        // Append line path changes onto texture layer array tracking matrix
+        this.canvasManager.continueStroke(currentX, currentY);
+
+        // Request next animation frame loop step
+        requestAnimationFrame(drawStep);
+      } else {
+        this.canvasManager.endStroke();
+        this.isIntroAnimating = false;
+        this.pen.rotation.z = 0.1;
+      }
+    };
+
+    drawStep();
   }
 
   setupEventListeners() {
@@ -105,7 +159,7 @@ export class SceneManager {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // 2. Keyboard Interaction: All four arrow keys mapping
+    // Keyboard Interaction: 4-Way Orbit Controls
     window.addEventListener("keydown", (e) => {
       const sensitivity = 0.05;
 
@@ -114,12 +168,11 @@ export class SceneManager {
 
       if (e.key === "ArrowUp") {
         this.phi -= sensitivity;
-        // Clamp to prevent camera flipping upside down at the poles
         if (this.phi < 0.1) this.phi = 0.1;
       }
       if (e.key === "ArrowDown") {
         this.phi += sensitivity;
-        if (this.phi > Math.PI / 2 - 0.05) this.phi = Math.PI / 2 - 0.05; // Stay above paper level
+        if (this.phi > Math.PI / 2 - 0.05) this.phi = Math.PI / 2 - 0.05;
       }
 
       this.updateCameraPosition();
@@ -130,7 +183,6 @@ export class SceneManager {
     window.addEventListener("mouseup", () => this.onMouseUp());
   }
 
-  // Updates perspective camera coordinates along an orbital sphere surface
   updateCameraPosition() {
     this.camera.position.x =
       this.radius * Math.sin(this.phi) * Math.sin(this.theta);
@@ -147,6 +199,9 @@ export class SceneManager {
   }
 
   onMouseMove(e) {
+    // Block mouse interference while animation loop is running
+    if (this.isIntroAnimating) return;
+
     this.updateRaycast(e);
     const intersects = this.raycaster.intersectObject(this.paper);
 
@@ -165,6 +220,8 @@ export class SceneManager {
   }
 
   onMouseDown(e) {
+    if (this.isIntroAnimating) return;
+
     if (e.button === 0) {
       this.updateRaycast(e);
       const intersects = this.raycaster.intersectObject(this.paper);
@@ -180,6 +237,7 @@ export class SceneManager {
   }
 
   onMouseUp() {
+    if (this.isIntroAnimating) return;
     this.isWriting = false;
     if (this.canvasManager) this.canvasManager.endStroke();
   }
